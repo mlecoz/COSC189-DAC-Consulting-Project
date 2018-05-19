@@ -2,13 +2,14 @@
 # Modified by:
 #
 # Description: This script will be periodically invoked on a server to gather information about which users are logged in.
+#              It is an intermediate file that will need a little more processing before being shown to the auditor (see below).
 #
 # This script will output a .csv file with this auditing information:
 # Column descriptions:
 # server: the server the script is running on
 # uid: the user id whose login information that row holds
 # login_day_of_week, login_month, login_day, login_year, login_timestamp - self explanatory
-# logout_day_of_week, logout_month, logout_day, logout_year, logtout_timestamp - self explanatory. NOTE: these fields
+# logout_day_of_week, logout_month, logout_day, logout_year, logout_timestamp - self explanatory. NOTE: these fields
 #     empty if the user has not yet ended their session at the time the script is invoked
 # still_logged_in_as_of - datetime stamp indicating the time that the script was invoked. NOTE: this field is only
 #     populated if the user's session has not yet ended when the script is invoked
@@ -16,10 +17,11 @@
 #     field is only populated if the user's session has ended
 #
 # Intended usage of this script:
-# The server will invoke this script at periodic intervals. Data will be amassed in a csv file.
+# The server will invoke this script at periodic intervals. Data will be amassed in audit_raw.csv.
 # Another script should be written that takes this .csv file and:
-# - creates a new csv file
-# - copies data in some user-specified date range from this original csv (I would recommend working with a pandas dataframe)
+# - creates a new csv file, perhaps audit.csv (this is the one the auditor will look at)
+# - copies data in some user-specified date range from this original csv (I would recommend working with a pandas dataframe).
+#   (Alternatively, the user could instead specify that they want the x most recent entries, or something like that.)
 # - gets rid of duplicate entries (ie, where multiple rows have ALL the exact same column values)
 # - For all "still logged in" entries in the range:
 #     - If there is an entry that shows the user did eventually log out of that session, delete all the "still logged in" entries because they are irrelevant.
@@ -29,7 +31,6 @@ import socket
 import os
 import datetime
 import subprocess
-# from subprocess import call
 
 ########### VALIDATING STRING FORMATS ###########
 
@@ -58,8 +59,8 @@ def is_valid_duration(duration):
 server_name = socket.gethostname()
 
 # Create file and init columns if file doesn't already exist
-if not os.path.exists("audit.csv"):
-    f = open('audit.csv', 'w+')
+if not os.path.exists("audit_raw.csv"):
+    f = open('audit_raw.csv', 'w+')
     f.write("server, uid, login_day_of_week, login_month, login_day, login_year, login_timestamp, logout_day_of_week, logout_month, logout_day, logout_year, logout_timestamp, still_logged_in_as_of, duration_days, duration_hours, duration_minutes \n")
     f.close()
 
@@ -67,7 +68,7 @@ if not os.path.exists("audit.csv"):
 # proc = subprocess.Popen(["last", "-F"], stdout=subprocess.PIPE, shell=True) # False?
 # (output, err) = proc.communicate()
 
-# dummy output for testing; comment this out or delete later
+# dummy outputs for testing; comment this out or delete later
 # output = "luisch   pts/3        10.31.114.223    Fri May 18 14:59:39 2018 - Fri May 18 15:17:20 2018  (00:17) \n luisch   pts/4        10.31.114.223    Fri May 18 14:54:47 2018 - Fri May 18 15:16:15 2018  (00:21) \n ajsheeha pts/3        129.170.91.56    Fri May 18 14:45:39 2018 - Fri May 18 14:55:01 2018  (00:09) \n gbsnlspl pts/91       129.170.212.20   Wed May  2 12:18:12 2018 - Thu May  3 14:33:19 2018 (1+02:15) \n annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in"
 output = "yanxin   pts/7        73.69.250.216    Fri May 18 21:54:04 2018 - Fri May 18 21:58:30 2018  (00:04) \n \
 luisch   pts/6        38.111.19.130    Fri May 18 21:48:21 2018 - Fri May 18 22:08:14 2018  (00:19) \n \
@@ -196,14 +197,14 @@ tomyoung pts/10       10.32.35.15      Thu May 17 15:23:00 2018 - Thu May 17 21:
 # parse `last`'s output
 row_list = output.split("\n") # a list where each row of the output is an element
 
-f = open('audit.csv', 'a')
+f = open('audit_raw.csv', 'a')
 for row in row_list:
 
     fields_list = row.split()
 
     # some initial validation checks
     if len(fields_list) != 11 and len(fields_list) != 15:
-        continue # this would be weird formatting. not a format this program knows how to parse
+        continue # this would be weird formatting. not a format this program knows how to parse.
 
     if fields_list[9] == "still" and fields_list[10] == "running":
         continue # this is a system reboot line. not relevant.
@@ -285,6 +286,3 @@ for row in row_list:
         f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + "" + "," + "" + "," + "" + "," + "" + "," + "" + "," + datetime.datetime.now().strftime("%a %B %d %Y %I:%M:%S") + "," + "" + "," + "" + "," + "" + "\n")
 
 f.close()
-
-# clean up duplicates at the end each time
-# also remove all "still logged in" on each run because the most recent run will have all
