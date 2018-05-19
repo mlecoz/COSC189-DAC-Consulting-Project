@@ -3,10 +3,10 @@
 # This script will output a .csv file with this auditing information.
 
 import socket
-from pathlib import Path
-from pandas import DataFrame
+# from pandas import DataFrame
 import os
 import datetime
+import subprocess
 # from subprocess import call
 
 ########### VALIDATING STRING FORMATS ###########
@@ -19,13 +19,13 @@ def is_valid_month(month):
            month == "Jul" or month == "Aug" or month == "Sep" or month == "Oct" or month == "Nov" or month == "Dec"
 
 def is_valid_day(day):
-    return 32 > Int(day) > 27
+    return 32 > int(day) > 0
 
 def is_valid_timestamp(timestamp):
     return len(timestamp) == 8 and timestamp.count(":") == 2
 
 def is_valid_year(year):
-    return len(year) == 4 and Int(year) >= 2018
+    return len(year) == 4 and int(year) >= 2018
 
 def is_valid_duration(duration):
     return ':' in duration and duration[0] == '(' and duration[len(duration)-1] == ')'
@@ -38,32 +38,37 @@ server_name = socket.gethostname()
 # Create file and init columns if file doesn't already exist
 if not os.path.exists("audit.csv"):
     f = open('audit.csv', 'w+')
-    f.write("hostname, uid, login_day_of_week, login_month, login_day, login_year, login_timestamp, logout_day_of_week, logout_month, logout_day, logout_year, logout_timestamp, still_logged_in_as_of, duration_days, duration_hours, duration_minutes")
-else:
-    f = open('audit.csv', 'w')
-
-# convert file to dataframe to make it easier to check that we aren't adding duplicate entries below
-# df = DataFrame.from_csv("audit.csv")
-# if df.empty:
-#     # output = call('last', shell=True)
-#     output = os.system('last -F')
-#     print output
+    f.write("server, uid, login_day_of_week, login_month, login_day, login_year, login_timestamp, logout_day_of_week, logout_month, logout_day, logout_year, logout_timestamp, still_logged_in_as_of, duration_days, duration_hours, duration_minutes \n")
+    f.close()
 
 # Run the `last` command to get the most recent login/logout info
-output = os.system('last')
+# proc = subprocess.Popen(["last", "-F"], stdout=subprocess.PIPE, shell=False) # True?
+# (output, err) = proc.communicate()
 
 # dummy output for testing; comment this out or delete later
 # output = "luisch   pts/3        10.31.114.223    Fri May 18 14:59:39 2018 - Fri May 18 15:17:20 2018  (00:17) \n luisch   pts/4        10.31.114.223    Fri May 18 14:54:47 2018 - Fri May 18 15:16:15 2018  (00:21) \n ajsheeha pts/3        129.170.91.56    Fri May 18 14:45:39 2018 - Fri May 18 14:55:01 2018  (00:09) \n gbsnlspl pts/91       129.170.212.20   Wed May  2 12:18:12 2018 - Thu May  3 14:33:19 2018 (1+02:15) \n annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in"
+output = "yanxin   pts/7        73.69.250.216    Fri May 18 21:54:04 2018   still logged in \n \
+luisch   pts/6        38.111.19.130    Fri May 18 21:48:21 2018   still logged in \n \
+kad      pts/5        10.31.47.145     Fri May 18 21:47:30 2018   still logged in \n \
+luisch   pts/0        38.111.19.130    Fri May 18 21:44:14 2018   still logged in \n \
+annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in \n \
+annie823 pts/3        10.31.187.42     Fri May 18 19:25:41 2018   still logged in \n \
+mlecoz   pts/2        10.31.206.31     Fri May 18 19:07:56 2018   still logged in \n \
+mlecoz   pts/0        10.31.117.155    Fri May 18 17:26:22 2018 - Fri May 18 19:47:20 2018  (02:20) \n \
+mlecoz   pts/0        10.31.117.155    Fri May 18 16:57:54 2018 - Fri May 18 17:25:41 2018  (00:27) \n \
+gszypko  pts/6        10.31.38.38      Fri May 18 15:03:24 2018 - Fri May 18 19:25:01 2018  (04:21)"
+
 
 # parse `last`'s output
 row_list = output.split("\n") # a list where each row of the output is an element
 
+f = open('audit.csv', 'a')
 for row in row_list:
 
     fields_list = row.split()
 
     # some initial validation checks
-    if len(fields_list) != 11 or len(fields_list) != 15:
+    if len(fields_list) != 11 and len(fields_list) != 15:
         continue # this would be weird formatting. not a format this program knows how to parse
 
     if fields_list[9] == "still" and fields_list[10] == "running":
@@ -136,22 +141,16 @@ for row in row_list:
             duration_mins = hours_and_mins[1]
         else: # this person has been on for less than a day
             duration_days = "0"
-            hours_and_mins = days_and_time[1].split(":") # we already validated that there's a colon
+            hours_and_mins = duration.split(":") # we already validated that there's a colon
             duration_hours = hours_and_mins[0]
             duration_mins = hours_and_mins[1]
 
-        f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + logout_day_of_week + "," + logout_month + "," + logout_day + "," + logout_year + "," + logout_timestamp + "," + "" + "," + duration_days + "," + duration_hours + "," + duration_mins)
+        f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + logout_day_of_week + "," + logout_month + "," + logout_day + "," + logout_year + "," + logout_timestamp + "," + "" + "," + duration_days + "," + duration_hours + "," + duration_mins + "\n")
 
     else: # is logged in still
-        f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + "" + "," + "" + "," + "" + "," + "" + "," + "" + "," + datetime.datetime.now() + "," + "" + "," + "" + "," + "")
+        f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + "" + "," + "" + "," + "" + "," + "" + "," + "" + "," + datetime.datetime.now().strftime("%a %B %d %Y %I:%M:%S") + "," + "" + "," + "" + "," + "" + "\n")
 
-
+f.close()
 
 # clean up duplicates at the end each time
 # also remove all "still logged in" on each run because the most recent run will have all
-
-
-
-
-
-
