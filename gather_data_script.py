@@ -1,6 +1,29 @@
-# Brenda Miao, Marissa Le Coz, and Casey Baer
-# This script will be periodically invoked on a server to gather information about which users are logged in.
-# This script will output a .csv file with this auditing information.
+# Created by: Marissa Le Coz
+# Modified by:
+#
+# Description: This script will be periodically invoked on a server to gather information about which users are logged in.
+#
+# This script will output a .csv file with this auditing information:
+# Column descriptions:
+# server: the server the script is running on
+# uid: the user id whose login information that row holds
+# login_day_of_week, login_month, login_day, login_year, login_timestamp - self explanatory
+# logout_day_of_week, logout_month, logout_day, logout_year, logtout_timestamp - self explanatory. NOTE: these fields
+#     empty if the user has not yet ended their session at the time the script is invoked
+# still_logged_in_as_of - datetime stamp indicating the time that the script was invoked. NOTE: this field is only
+#     populated if the user's session has not yet ended when the script is invoked
+# duration_days, duration_hours, duration_minutes - if the session has completed, how long it lasted for. NOTE: this
+#     field is only populated if the user's session has ended
+#
+# Intended usage of this script:
+# The server will invoke this script at periodic intervals. Data will be amassed in a csv file.
+# Another script should be written that takes this .csv file and:
+# - creates a new csv file
+# - copies data in some user-specified date range from this original csv (I would recommend working with a pandas dataframe)
+# - gets rid of duplicate entries (ie, where multiple rows have ALL the exact same column values)
+# - For all "still logged in" entries in the range:
+#     - If there is an entry that shows the user did eventually log out of that session, delete all the "still logged in" entries because they are irrelevant.
+#     - If there is not an entry that shows the user logged out, delete all the "still logged" in entries except the most recent.
 
 import socket
 import os
