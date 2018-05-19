@@ -36,17 +36,24 @@ def is_valid_duration(duration):
 server_name = socket.gethostname()
 
 # Create file and init columns if file doesn't already exist
-raw_data_file = Path("audit.csv")
-if not raw_data_file.is_file():
-    Path("audit.csv").touch()
-    f = open('audit.csv', 'w')
+if not os.path.exists("audit.csv"):
+    f = open('audit.csv', 'w+')
     f.write("hostname, uid, login_day_of_week, login_month, login_day, login_year, login_timestamp, logout_day_of_week, logout_month, logout_day, logout_year, logout_timestamp, still_logged_in_as_of, duration_days, duration_hours, duration_minutes")
+else:
+    f = open('audit.csv', 'w')
+
+# convert file to dataframe to make it easier to check that we aren't adding duplicate entries below
+# df = DataFrame.from_csv("audit.csv")
+# if df.empty:
+#     # output = call('last', shell=True)
+#     output = os.system('last -F')
+#     print output
 
 # Run the `last` command to get the most recent login/logout info
 output = os.system('last')
 
 # dummy output for testing; comment this out or delete later
-output = "luisch   pts/3        10.31.114.223    Fri May 18 14:59:39 2018 - Fri May 18 15:17:20 2018  (00:17) \n luisch   pts/4        10.31.114.223    Fri May 18 14:54:47 2018 - Fri May 18 15:16:15 2018  (00:21) \n ajsheeha pts/3        129.170.91.56    Fri May 18 14:45:39 2018 - Fri May 18 14:55:01 2018  (00:09) \n gbsnlspl pts/91       129.170.212.20   Wed May  2 12:18:12 2018 - Thu May  3 14:33:19 2018 (1+02:15) \n annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in"
+# output = "luisch   pts/3        10.31.114.223    Fri May 18 14:59:39 2018 - Fri May 18 15:17:20 2018  (00:17) \n luisch   pts/4        10.31.114.223    Fri May 18 14:54:47 2018 - Fri May 18 15:16:15 2018  (00:21) \n ajsheeha pts/3        129.170.91.56    Fri May 18 14:45:39 2018 - Fri May 18 14:55:01 2018  (00:09) \n gbsnlspl pts/91       129.170.212.20   Wed May  2 12:18:12 2018 - Thu May  3 14:33:19 2018 (1+02:15) \n annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in"
 
 # parse `last`'s output
 row_list = output.split("\n") # a list where each row of the output is an element
@@ -129,7 +136,7 @@ for row in row_list:
             duration_mins = hours_and_mins[1]
         else: # this person has been on for less than a day
             duration_days = "0"
-            hours_and_mins = days_and_time[1].split(":")
+            hours_and_mins = days_and_time[1].split(":") # we already validated that there's a colon
             duration_hours = hours_and_mins[0]
             duration_mins = hours_and_mins[1]
 
@@ -139,15 +146,11 @@ for row in row_list:
         f.write(server_name + "," + uid + "," + login_day_of_week + "," + login_month + "," + login_day + "," + login_year + "," + login_timestamp + "," + "" + "," + "" + "," + "" + "," + "" + "," + "" + "," + datetime.datetime.now() + "," + "" + "," + "" + "," + "")
 
 
+
 # clean up duplicates at the end each time
 # also remove all "still logged in" on each run because the most recent run will have all
 
-# # convert file to dataframe
-# df = DataFrame.from_csv("audit.csv")
-# if df.empty:
-#     # output = call('last --since 20180501110000', shell=True)
-#     output = os.system('last -F')
-#     print output
+
 
 
 
