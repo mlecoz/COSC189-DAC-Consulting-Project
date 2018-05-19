@@ -9,6 +9,7 @@ import os
 import datetime
 # from subprocess import call
 
+########### VALIDATING STRING FORMATS ###########
 
 def is_valid_weekday(day):
     return day == "Mon" or day == "Tue" or day == "Wed" or day == "Thu" or day == "Fri" or day == "Sat" or day == "Sun"
@@ -29,10 +30,12 @@ def is_valid_year(year):
 def is_valid_duration(duration):
     return ':' in duration and duration[0] == '(' and duration[len(duration)-1] == ')'
 
+#######################################################
 
+# get server name to be written to .csv
 server_name = socket.gethostname()
 
-# Create file if it doesn't already exist
+# Create file and init columns if file doesn't already exist
 raw_data_file = Path("audit.csv")
 if not raw_data_file.is_file():
     Path("audit.csv").touch()
@@ -42,11 +45,11 @@ if not raw_data_file.is_file():
 # Run the `last` command to get the most recent login/logout info
 output = os.system('last')
 
-# dummy output for testing
+# dummy output for testing; comment this out or delete later
 output = "luisch   pts/3        10.31.114.223    Fri May 18 14:59:39 2018 - Fri May 18 15:17:20 2018  (00:17) \n luisch   pts/4        10.31.114.223    Fri May 18 14:54:47 2018 - Fri May 18 15:16:15 2018  (00:21) \n ajsheeha pts/3        129.170.91.56    Fri May 18 14:45:39 2018 - Fri May 18 14:55:01 2018  (00:09) \n gbsnlspl pts/91       129.170.212.20   Wed May  2 12:18:12 2018 - Thu May  3 14:33:19 2018 (1+02:15) \n annie823 pts/4        10.31.187.42     Fri May 18 19:26:04 2018   still logged in"
 
-# parse 'last''s output
-row_list = output.split("\n") # each row
+# parse `last`'s output
+row_list = output.split("\n") # a list where each row of the output is an element
 
 for row in row_list:
 
@@ -84,16 +87,18 @@ for row in row_list:
     if not is_valid_year(login_year):
         continue
 
+    # Here's where the formatting changes if you're dealing with a user who has logged out or who is still logged in
     is_logged_in = False
     # "still logged in"; must check for *each* word because there is also "still running" for system reboots
     if fields_list[8] == "still" and fields_list[9] == "logged" and fields_list[10] == "in":
         is_logged_in = True
 
+    # the additional fields for logout info
     if not is_logged_in:
 
         logout_day_of_week = fields_list[9]
         if not is_valid_weekday(logout_day_of_week):
-            continue  # something about the formatting of this output line is messed up
+            continue
 
         logout_month = fields_list[10]
         if not is_valid_month(logout_month):
@@ -116,7 +121,7 @@ for row in row_list:
             continue
         duration = duration[1:len(duration)-1] # get rid of parentheses around the duration
 
-        if '+' in duration: # this person has been on for days
+        if '+' in duration: # this person has been on for days. Example: 1+10:10 means 1 day, 10 hours, 10 minutes
             days_and_time = duration.split('+')
             duration_days = days_and_time[0]
             hours_and_mins = days_and_time[1].split(":")
@@ -143,13 +148,7 @@ for row in row_list:
 #     # output = call('last --since 20180501110000', shell=True)
 #     output = os.system('last -F')
 #     print output
-#
-#
-#
-# # get server name
-# server_name = socket.gethostname()
 
-# get
 
 
 
