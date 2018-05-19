@@ -20,6 +20,14 @@ def is_valid_month(month):
 def is_valid_day(day):
     return 32 > Int(day) > 27
 
+def is_valid_timestamp(timestamp):
+    return len(timestamp) == 8 and timestamp.count(":") == 2
+
+def is_valid_year(year):
+    return len(year) == 4 and Int(year) >= 2018
+
+def is_valid_duration(duration):
+    return ':' in duration and duration[0] == '(' and duration[len(duration)-1] == ')'
 
 
 server_name = socket.gethostname()
@@ -65,8 +73,16 @@ for row in row_list:
         continue
 
     login_day = fields_list[5]
+    if not is_valid_day(login_day):
+        continue
+
     login_timestamp = fields_list[6]
+    if not is_valid_timestamp(login_timestamp):
+        continue
+
     login_year = fields_list[7]
+    if not is_valid_year(login_year):
+        continue
 
     is_logged_in = False
     # "still logged in"; must check for *each* word because there is also "still running" for system reboots
@@ -80,11 +96,26 @@ for row in row_list:
             continue  # something about the formatting of this output line is messed up
 
         logout_month = fields_list[10]
-        logout_day = fields_list[11]
-        logout_timestamp = fields_list[12]
-        logout_year = fields_list[13]
+        if not is_valid_month(logout_month):
+            continue
 
-        duration = fields_list[14][1:len(duration)-1] # get rid of parentheses around the duration
+        logout_day = fields_list[11]
+        if not is_valid_day(logout_day):
+            continue
+
+        logout_timestamp = fields_list[12]
+        if not is_valid_timestamp(logout_timestamp):
+            continue
+
+        logout_year = fields_list[13]
+        if not is_valid_year(logout_year):
+            continue
+
+        duration = fields_list[14]
+        if not is_valid_duration(duration):
+            continue
+        duration = duration[1:len(duration)-1] # get rid of parentheses around the duration
+
         if '+' in duration: # this person has been on for days
             days_and_time = duration.split('+')
             duration_days = days_and_time[0]
