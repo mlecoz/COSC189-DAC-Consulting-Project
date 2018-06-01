@@ -16,6 +16,7 @@ import datetime
 import subprocess
 import sys
 import pandas as pd
+import numpy
 
 ########### VALIDATING STRING FORMATS ###########
 
@@ -63,37 +64,20 @@ if os.path.exists("audit_raw.csv"):
     #write only data from a specific time range
     elif selection == "d":
         #prompts user for monthly time range for data output. 
-        start = raw_input("Enter starting month (3 letters) and year: ").split(" ")
+        start = raw_input("Enter month (3 letters) and year: ").split(" ")
 
         #check correct input for start month and year
         while(not len(start) == 2 or not is_valid_month(start[0]) or not is_valid_year(start[1])):
             start = raw_input("Invalid Input. Enter starting month (3 letters) and year: ").split(" ")
 
-        startMonth = month_to_num(start[0])
-        startYear = int(start[1])
+        month = start[0]
+        year = int(start[1])
 
-        end = raw_input("Enter end month (3 letters) and year: ").split(" ")
-        
-        #check correct input for end month and year
-        while(not len(start) == 2 or not is_valid_month(end[0]) or not is_valid_year(end[1])):
-            end = raw_input("Invalid Input. Enter starting month (3 letters) and year: ").split(" ")
-            
-        endMonth = month_to_num(end[0])
-        endYear = int(end[1])
-
-
-        #remove unneeded values
-        row_curr = 0
-        df2_clean = df_clean
-        for row in df.itertuples():
-            if int(row[6]) < startYear or int(row[6]) > endYear:
-                df2_clean = df2_clean.drop(row_curr)
-            elif month_to_num(row[4]) < startMonth or month_to_num(row[4]) > endMonth:
-                df2_clean = df2_clean.drop(row_curr)
-            row_curr = row_curr + 1
+        #get values corresponding to month entered
+        df2_clean = df_clean.loc[(df[' login_month'] == month) & (df[' login_year'] == year) ] 
 
         #create new file to write cleaned data to
-        df2_clean.to_csv('audit-clean_'+start[0]+str(startYear)+'_'+end[0]+str(endYear)+'.csv')
+        df2_clean.to_csv('audit-clean_'+start[0]+str(year)+'.csv')
 
 else:
     sys.stdout.write("Run raw_audit_script.py to obtain raw data before running this script")
